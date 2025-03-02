@@ -41,7 +41,7 @@ def login_user(username: str, password: str) -> Tuple[Any, int]:
         return create_response(False, "invalid username or password", None, 401)
 
     access_token = create_access_token(
-        identity=user.id, expires_delta=timedelta(hours=1)
+        identity=str(user.id), expires_delta=timedelta(hours=1)
     )
     logger.info(f"User '{username}' logged in successfully")
     return create_response(

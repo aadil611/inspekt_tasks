@@ -15,8 +15,8 @@ def create_response(
         response_body["data"] = data
 
     if success:
-        logger.info(f"Response -> {status_code}: {message}")
+        logger.info(f"Response: {status_code}, {message}")
     else:
-        logger.warning(f"Response -> {status_code}: {message}")
+        logger.warning(f"Response: {status_code}, {message}")
 
     return jsonify(response_body), status_code
