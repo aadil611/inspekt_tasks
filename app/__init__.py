@@ -20,7 +20,7 @@ def create_app():
     migrate.init_app(app, db)
     bcrypt.init_app(app)
     jwt.init_app(app)
-    CORS(app, origins=os.getenv("ALLOWED_ORIGINS"))
+    CORS(app)
 
     @app.get("/health")
     def _():
