@@ -19,15 +19,29 @@ def create_task(title: str, description: str) -> Tuple[Dict[str, Any], int]:
     return create_response(True, "Task created successfully", {"task_id": task.id}, 201)
 
 
-def get_tasks() -> Tuple[Dict[str, Any], int]:
+def get_tasks(task_id: int = None) -> Tuple[Dict[str, Any], int]:
     """ list all tasks for current logged-in user """
     user_id = get_jwt_identity()
     logger.info(f"User {user_id} fetching their tasks")
     tasks = Task.query.filter_by(user_id=user_id).all()
     
+    if task_id:
+        task = Task.query.filter_by(id=task_id, user_id=user_id).first()
+        if not task:
+            logger.warning(f"User {user_id} tried fetching a non-existent task {task_id}")
+            return create_response(False, "Task not found", None, 404)
+        task_data = {
+            "id": task.id,
+            "title": task.title,
+            "description": task.description,
+            "is_completed": task.is_completed
+        }
+        return create_response(True, "Task fetched successfully", task_data, 200)
+    
+    tasks = Task.query.filter_by(user_id=user_id).all()
     logger.info(f"User {user_id} fetched their tasks")
     task_list = [{"id": t.id, "title": t.title, "description": t.description, "is_completed": t.is_completed} for t in tasks]
-    
+
     return create_response(True, "Tasks fetched successfully", {"tasks": task_list}, 200)
 
 
@@ -44,13 +58,13 @@ def update_task(task_id: int, title: str, description: str, is_completed: bool) 
         task.title = title
     if description:
         task.description = description
-    if is_completed:
+    if is_completed is not None:
         task.is_completed = is_completed
 
     db.session.commit()
 
     logger.info(f"Task {task_id} updated successfully by user {user_id}")
-    return create_response(True, "Task updated successfully", None, 200)
+    return create_response(True, "Task updated successfully", {"data": {"is_completed": task.is_completed}}, 200)
 
 
 def delete_task(task_id: int) -> Tuple[Dict[str, Any], int]:

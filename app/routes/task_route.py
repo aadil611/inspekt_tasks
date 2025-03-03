@@ -20,6 +20,14 @@ def create_task_route():
 def get_tasks_route():
     return get_tasks()
 
+# get a single task
+@task_bp.route("/tasks/<int:task_id>", methods=["GET"])
+@jwt_required()
+def get_single_task(task_id: int):
+    user_id = get_jwt_identity()
+    logger.info(f"User {user_id} fetching task {task_id}")
+    return get_tasks(task_id)
+
 
 @task_bp.route("/tasks/<int:task_id>", methods=["PATCH"])
 @jwt_required()
@@ -30,6 +38,8 @@ def update_task_route(task_id: int):
     
     if title is None and description is None and is_completed is None:
         return create_response(False, "No data to update", None, 400)
+    
+    logger.info(f"User {get_jwt_identity()} updating task {task_id} with {data}")
     
     return update_task(task_id, title, description, is_completed)
 

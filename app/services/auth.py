@@ -45,5 +45,5 @@ def login_user(username: str, password: str) -> Tuple[Any, int]:
     )
     logger.info(f"User '{username}' logged in successfully")
     return create_response(
-        True, "User Loggedin successfully", {"access_token": access_token}, 201
+        True, "User Loggedin successfully", {"access_token": access_token}, 200
     )
