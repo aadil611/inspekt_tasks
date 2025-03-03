@@ -1,0 +1,11 @@
+stages:
+- lint
+- test
+
+before_script:
+- echo "Pipeline Triggered for project $CI_PROJECT_NAME"
+
+lint:
+  stage: lint
+  script:
+  - echo "Running Linting"
