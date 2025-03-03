@@ -1,11 +1,23 @@
 stages:
 - lint
 - test
+- deploy
+
+variables:
+  VIRTUAL_ENV: .venv
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
 before_script:
-- echo "Pipeline Triggered for project $CI_PROJECT_NAME"
+- python3 -m venv $VIRTUAL_ENV
+- source $VIRTUAL_ENV/bin/activate
+- pip install --upgrade pip
+- pip install -r requirements.txt
 
 lint:
   stage: lint
   script:
-  - echo "Running Linting"
+  - pip install bandit flake8 black isort
+  - bandit -r app/
+  - flake8 app/
+  - black --check app/
+  - isort --check-only app/
