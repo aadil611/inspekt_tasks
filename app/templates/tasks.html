@@ -1,0 +1,279 @@
+{% extends "layout.html" %}
+
+{% block title %}My Tasks{% endblock %}
+
+{% block content %}
+<h3>My Tasks</h3>
+<table class="table table-striped">
+    <button class="btn btn-success" onclick="showTaskModal()">Add New Task</button>
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Description</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody id="task-list">
+        
+    </tbody>
+</table>
+<div id="error-message" class="alert alert-danger d-none">Authorization required. Please log in.</div>
+<div class="modal fade" id="taskModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">New Task</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="task-title" class="form-control mb-2" placeholder="Task Title">
+                <textarea id="task-desc" class="form-control mb-2" placeholder="Task Description"></textarea>
+                <button class="btn btn-primary w-100" onclick="createTask()">Create Task</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Task Modal -->
+<div class="modal fade" id="editTaskModal" tabindex="-1" aria-labelledby="editTaskModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editTaskModalLabel">Edit Task</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="edit-task-error" class="alert alert-danger d-none"></div>
+                <form id="edit-task-form">
+                    <input type="hidden" id="edit-task-id">
+                    <div class="mb-3">
+                        <label for="edit-task-title" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="edit-task-title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-task-description" class="form-label">Description</label>
+                        <textarea class="form-control" id="edit-task-description" rows="3" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Update Task</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const token = localStorage.getItem("inspekt-token");
+    async function fetchTasks() {
+        
+        if (!token) {
+            document.getElementById("error-message").classList.remove("d-none");
+            return;
+        }
+
+        try {
+            const response = await fetch("http://localhost:5000/api/tasks", {
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+
+            if (response.status === 401) {
+                document.getElementById("error-message").textContent = "Authorization required. Please log in.";
+                document.getElementById("error-message").classList.remove("d-none");
+                localStorage.removeItem("inspekt-token");
+                document.querySelector(".btn-danger").classList.add("invisible");
+                document.querySelector(".btn-success").classList.remove("invisible");
+                return;
+            }
+
+
+            if (!response.ok) {
+                throw new Error("Failed to fetch tasks");
+            }
+
+
+            const data = await response.json();
+            
+            renderTasks(data.data.tasks);
+        } catch (error) {
+            console.error("Error fetching tasks:", error);
+            document.getElementById("error-message").textContent = "Error loading tasks.";
+            document.getElementById("error-message").classList.remove("d-none");
+        }
+    }
+
+    function renderTasks(tasks) {
+        const taskList = document.getElementById("task-list");
+        taskList.innerHTML = ""; // Clear existing tasks
+
+        //sort tasks by id
+        tasks.sort((a, b) => a.id - b.id);
+
+        tasks.forEach(task => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${task.title}</td>
+                <td>${task.description}</td>
+                <td>
+                    <input type="checkbox" ${task.is_completed ? "checked" : ""} 
+                        onchange="toggleTaskCompletion('${task.id}', this.checked)">
+                </td>
+                <td>
+                    
+                    <button class="btn btn-warning btn-sm" onclick="editTask('${task.id}', '${task.title}', decodeURIComponent('${encodeURIComponent(task.description)}'))">Edit</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteTask('${task.id}')">Delete</button>
+                </td>
+            `;
+            taskList.appendChild(row);
+        });
+    }
+
+    async function toggleTaskCompletion(taskId, isCompleted) {
+        const token = localStorage.getItem("inspekt-token");
+        if (!token) {
+            alert("You need to log in first!");
+            return;
+        }
+
+        console.log("isCompleted", isCompleted);
+    
+        const response = await fetch(`http://localhost:5000/api/tasks/${taskId}`, {
+            method: "PATCH",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ is_completed: isCompleted })
+        }).
+        then(res => res.json())
+        .then(data => {
+            console.log(data);
+  
+        });
+    
+        if (!response.ok) {
+            alert("Failed to update task status.");
+        }
+    }
+    
+    
+
+
+
+
+    function showTaskModal() {
+        document.getElementById("task-title").value = "";
+        document.getElementById("task-desc").value = "";
+        new bootstrap.Modal(document.getElementById('taskModal')).show();
+    }
+    
+    function createTask() {
+        const token = localStorage.getItem("inspekt-token");
+        const title = document.getElementById("task-title").value;
+        const description = document.getElementById("task-desc").value;
+    
+        fetch("http://localhost:5000/api/tasks", {
+            method: "POST",
+            headers: { 
+                "Authorization": `Bearer ${token}`, 
+                "Content-Type": "application/json" 
+            },
+            body: JSON.stringify({ title, description })
+            
+        }).then(res => res.json())
+          .then(data => {
+            console.log(data);
+              if (data.success) {
+                  alert("Task Created!");
+                  location.reload(); // Refresh to show the new task
+              } else {
+                  alert("Failed to create task: " + data.message);
+              }
+          });
+    }
+    
+    function deleteTask(taskId) {
+        if (!confirm("Are you sure you want to delete this task?")) {
+            return;
+        }
+    
+        fetch(`/api/tasks/${taskId}`, {
+            method: "DELETE",
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        })
+        .then(response => {
+            console.log(response.json())
+            if (response.ok) {
+                alert("Task Deleted!");
+                location.reload();
+            } else {
+                alert("Failed to delete task: " + data.message);
+            }
+        })
+        .then(data => {
+            
+        })
+        .catch(error => {
+            console.error("Error deleting task:", error);
+            alert("An error occurred while deleting the task.");
+        });
+    }
+
+    function editTask(taskId, title, description) {
+        document.getElementById("edit-task-id").value = taskId;
+        document.getElementById("edit-task-title").value = title;
+        document.getElementById("edit-task-description").value = description;
+
+        const editModal = new bootstrap.Modal(document.getElementById("editTaskModal"));
+        editModal.show();
+    }
+
+    document.getElementById("edit-task-form").addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        const taskId = document.getElementById("edit-task-id").value;
+        const title = document.getElementById("edit-task-title").value;
+        const description = document.getElementById("edit-task-description").value;
+        const token = localStorage.getItem("inspekt-token");
+        const errorDiv = document.getElementById("edit-task-error");
+
+        errorDiv.classList.add("d-none");
+
+        try {
+            const response = await fetch(`http://localhost:5000/api/tasks/${taskId}`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({ title, description })
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to update task!");
+            }
+
+            // Close the modal
+            const editModal = bootstrap.Modal.getInstance(document.getElementById("editTaskModal"));
+            editModal.hide();
+
+            location.reload();
+
+        } catch (error) {
+            errorDiv.textContent = error.message;
+            errorDiv.classList.remove("d-none");
+        }
+    });
+
+
+    window.onload = fetchTasks;
+</script>
+{% endblock %} 
+
+
+

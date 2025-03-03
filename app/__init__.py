@@ -4,6 +4,7 @@ from app.config import DevConfig
 from app.extentions import db, migrate, bcrypt, jwt
 from app.routes.auth_route import auth_bp
 from app.routes.task_route import task_bp
+from app.routes.web_route import web_bp
 
 
 load_dotenv()
@@ -24,5 +25,6 @@ def create_app():
 
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(task_bp, url_prefix="/api")
+    app.register_blueprint(web_bp)
 
     return app
