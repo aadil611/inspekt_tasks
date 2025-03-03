@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inspekt-labs-task
+  labels:
+    app: inspekt-labs-task
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: inspekt-labs-task
+  template:
+    metadata:
+      labels:
+        app: inspekt-labs-task
+    spec:
+      containers:
+      - name: flask-app
+        image: aadil611/inspekt_task:v3
+        ports:
+        - containerPort: 8018
+        env:
+        - name: FLASK_ENV
+          value: "production"
+        - name: DATABASE_URL
+          value: "postgresql://aadil:pass123@postgres-service:5432/task_db"
+        - name: SECRET_KEY
+          value: "41dc93acbf47dca697318fdee87e8f5002174bb39ec4f7d23b643d72887ff52d"
+        - name: JWT_SECRET_KEY
+          value: "0d90f00d0d7475f6ce3dfd112288a20b0879cbe598f86953d3d812eb505962e9"
+        - name: ALLOWED_ORIGINS
+          value: "*"
+        resources:
+          limits:
+            cpu: "200m"
+            memory: "512Mi"
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
