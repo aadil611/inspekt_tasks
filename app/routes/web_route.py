@@ -1,5 +1,4 @@
 from flask import Blueprint, render_template, redirect, request, session, url_for
-import requests
 from app.utils.logger import get_logger
 from flask import flash
 
