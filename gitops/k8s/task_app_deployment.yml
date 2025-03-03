@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: flask-app
-        image: aadil611/inspekt_task:v3
+        image: aadil611/inspekt_task:k8s-1
         ports:
         - containerPort: 8018
         env:
