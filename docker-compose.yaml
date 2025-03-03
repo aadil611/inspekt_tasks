@@ -1,0 +1,27 @@
+services:
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: aadil
+      POSTGRES_PASSWORD: pass123
+      POSTGRES_DB: task_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - "postgres_data:/var/lib/postgresql/data"
+
+  task:
+    build: .
+
+    env_file:
+      - .env
+
+    ports:
+      - "8018:8018"
+
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

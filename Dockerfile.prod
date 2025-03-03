@@ -1,0 +1,52 @@
+FROM python:3.11-slim AS builder
+
+LABEL maintainer="work.aadil611@gmail.com"
+
+# Set environment variables
+ENV PIP_NO_CACHE_DIR=off \
+    PIP_DISABLE_PIP_VERSION_CHECK=on \
+    PIP_DEFAULT_TIMEOUT=100
+
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y gcc libpq-dev && rm -rf /var/lib/apt/lists/*
+
+
+COPY requirements.txt .
+RUN pip install --upgrade pip && pip install --prefix=/install -r requirements.txt
+
+
+
+
+FROM python:3.11-slim
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PATH="/home/appuser/.local/bin:$PATH"
+
+
+RUN mkdir logs && useradd -m appuser
+WORKDIR /app
+# Set permissions on /app to appuser
+RUN chmod 755 /app
+
+# Set permissions on /app to appuser to avoid permission issues
+RUN chown -R appuser:appuser /app
+USER appuser
+
+
+# Copy dependencies from builder stage
+COPY --from=builder /install /home/appuser/.local/
+
+# Copy application code
+COPY --chown=appuser:appuser . .
+
+
+# Expose Flask's default port
+EXPOSE 8018
+
+# Run the application
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:8018", "app.main:app"]

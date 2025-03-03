@@ -3,6 +3,8 @@ flask_sqlalchemy==3.1.1
 flask_migrate==4.1.0
 flask_bcrypt==1.0.1
 flask_jwt_extended==4.7.1
-psycopg2==2.9.10
+psycopg2-binary==2.9.10
 dotenv==0.9.9
 mypy==1.15.0
+Flask-Cors==4.0.1
+gunicorn==23.0.0
